@@ -1,10 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "Sari-SaaS Hub",
   description: "Unified MSME Commerce Operating System",
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
   themeColor: "#0F172A",
 };
 

@@ -1,4 +1,5 @@
-import type { MessageChannel, SalesChannel } from "../types/message";
+import type { MessageChannel } from "../types/message";
+import type { SalesChannel } from "../types/order";
 
 export const CHANNEL_LABELS: Record<MessageChannel | SalesChannel, string> = {
   FACEBOOK:  "Facebook",

@@ -26,13 +26,13 @@ async function registerPlugins() {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 async function registerRoutes() {
-  const { authRoutes }      = await import("./routes/auth");
-  const { ordersRoutes }    = await import("./routes/orders");
-  const { paymentsRoutes }  = await import("./routes/payments");
-  const { messagesRoutes }  = await import("./routes/messages");
-  const { inventoryRoutes } = await import("./routes/inventory");
-  const { logisticsRoutes } = await import("./routes/logistics");
-  const { syncRoutes }      = await import("./routes/sync");
+  const { authRoutes }      = await import("./routes/auth/index.js");
+  const { ordersRoutes }    = await import("./routes/orders/index.js");
+  const { paymentsRoutes }  = await import("./routes/payments/index.js");
+  const { messagesRoutes }  = await import("./routes/messages/index.js");
+  const { inventoryRoutes } = await import("./routes/inventory/index.js");
+  const { logisticsRoutes } = await import("./routes/logistics/index.js");
+  const { syncRoutes }      = await import("./routes/sync/index.js");
 
   app.register(authRoutes,      { prefix: "/auth" });
   app.register(ordersRoutes,    { prefix: "/orders" });

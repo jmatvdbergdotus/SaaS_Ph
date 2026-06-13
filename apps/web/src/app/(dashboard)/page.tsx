@@ -49,14 +49,14 @@ export default function DashboardPage() {
           value={pendingCount}
           color={pendingCount > 0 ? "var(--color-warning)" : "var(--color-success)"}
           cta="Fix Now"
-          href="/dashboard/orders"
+          href="/orders"
         />
         <StatusCard
           label="Low Stock Items"
           value={0}
           color="var(--color-neutral)"
           cta="View"
-          href="/dashboard/inventory"
+          href="/inventory"
         />
       </div>
 

@@ -1,6 +1,6 @@
 import type { Order } from "../types/order";
 import type { Store } from "../types/merchant";
-import { formatPeso, formatDateTimePH } from "./formatDate";
+import { formatPeso } from "./formatCurrency";
 
 // re-export from formatCurrency
 export { formatPeso } from "./formatCurrency";

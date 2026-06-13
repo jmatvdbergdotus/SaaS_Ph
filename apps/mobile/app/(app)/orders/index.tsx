@@ -35,7 +35,7 @@ function OrderCard({ order }: { order: Order }) {
   );
 }
 
-const { colors, borderRadius, fontSize, spacing } = theme;
+const { colors, borderRadius, fontSize } = theme;
 const styles = StyleSheet.create({
   screen:         { flex: 1, backgroundColor: colors.slate, padding: 16 },
   title:          { fontSize: fontSize.xl, fontWeight: "700", marginBottom: 16, color: colors.navy },

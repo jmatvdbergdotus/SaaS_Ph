@@ -1,8 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import("next").NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
-  // PWA config (add next-pwa if needed)
   headers: async () => [
     {
       source: "/(.*)",

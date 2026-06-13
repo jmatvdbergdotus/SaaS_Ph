@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../../constants/theme";
 import { formatPeso } from "@sari-saas/core";

@@ -1,10 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import { useOrdersStore } from "../../../store/ordersStore";
-import { formatPeso, formatDateTimePH, getElapsedLabel } from "@sari-saas/core";
+import { formatPeso, getElapsedLabel } from "@sari-saas/core";
 import type { Order } from "@sari-saas/core";
-
-const STATUS_FILTERS = ["ALL", "PENDING_PAYMENT", "PAID", "DISPATCHED", "COMPLETED"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
   NEW:              "var(--color-neutral)",
@@ -40,7 +38,7 @@ export default function OrdersPage() {
 
 function OrderCard({ order }: { order: Order }) {
   return (
-    <a href={"/dashboard/orders/" + order.id} style={{ textDecoration: "none" }}>
+    <a href={"/orders/" + order.id} style={{ textDecoration: "none" }}>
       <div style={{
         background: "var(--color-surface)", border: "1px solid var(--color-border)",
         borderRadius: 8, padding: 16,
