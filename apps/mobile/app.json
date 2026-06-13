@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Sari-SaaS Hub",
+    "slug": "sari-saas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "scheme": "sarisaas",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#0F172A"
+      },
+      "package": "com.sarisaas.hub"
+    },
+    "ios": {
+      "bundleIdentifier": "com.sarisaas.hub",
+      "supportsTablet": false
+    },
+    "plugins": [
+      "expo-router",
+      ["expo-camera", { "cameraPermission": "Kailangan ng camera para ma-scan ang payment screenshots." }],
+      ["expo-image-picker", { "photosPermission": "Kailangan ng access sa photos para ma-upload ang payment." }]
+    ]
+  }
+}

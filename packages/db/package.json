@@ -1,0 +1,13 @@
+{
+  "name": "@sari-saas/db",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "migrate": "supabase db push",
+    "seed": "supabase db seed",
+    "generate-types": "supabase gen types typescript --local > types/database.ts"
+  },
+  "devDependencies": {
+    "supabase": "^1.178.0"
+  }
+}

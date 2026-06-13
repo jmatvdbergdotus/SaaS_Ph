@@ -1,0 +1,37 @@
+:root {
+  /* Brand */
+  --color-navy:           #0F172A;
+  --color-slate:          #F8FAFC;
+  /* Status */
+  --color-critical:       #DC2626;
+  --color-warning:        #D97706;
+  --color-success:        #16A34A;
+  --color-neutral:        #64748B;
+  /* Surface */
+  --color-border:         #E2E8F0;
+  --color-surface:        #FFFFFF;
+  /* Text */
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-inverse:   #F8FAFC;
+  /* Spacing */
+  --touch-min:            48px;
+  --touch-button:         56px;
+  /* Typography */
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-system);
+  background-color: var(--color-slate);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure minimum touch targets */
+button, a[role="button"] {
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
