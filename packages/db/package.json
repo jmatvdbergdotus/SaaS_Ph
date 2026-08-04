@@ -2,6 +2,9 @@
   "name": "@sari-saas/db",
   "version": "0.0.1",
   "private": true,
+  "exports": {
+    "./types/database": "./types/database.ts"
+  },
   "scripts": {
     "supabase": ".\\node_modules\\supabase\\bin\\supabase.exe",
     "db:link": "pnpm supabase link",
