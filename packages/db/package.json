@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "migrate": "supabase db push",
-    "seed": "supabase db seed",
-    "generate-types": "supabase gen types typescript --local > types/database.ts"
+    "supabase": ".\\node_modules\\supabase\\bin\\supabase.exe",
+    "db:link": "pnpm supabase link",
+    "migrate": "pnpm supabase db push",
+    "db:migrate": "pnpm migrate",
+    "seed": "pnpm supabase db seed",
+    "generate-types": "pnpm --silent supabase gen types typescript --linked > types/database.ts"
   },
   "devDependencies": {
     "supabase": "^1.178.0"
