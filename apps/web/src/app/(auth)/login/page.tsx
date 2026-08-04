@@ -1,15 +1,32 @@
 "use client";
 import { useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
 export default function LoginPage() {
-  const [phone, setPhone]     = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleRequestOtp(e: React.FormEvent) {
+  async function handleRequestMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // TODO: call POST /auth/otp/request
-    console.warn("OTP requested for", phone);
+    setMessage(null);
+    setError(null);
+
+    const { error: signInError } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (signInError) {
+      setError(signInError.message);
+    } else {
+      setMessage("Check your email for the login link.");
+    }
+
     setLoading(false);
   }
 
@@ -17,18 +34,18 @@ export default function LoginPage() {
     <main style={{ padding: 24, maxWidth: 400, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Sari-SaaS Hub</h1>
       <p style={{ color: "var(--color-text-secondary)", marginBottom: 24 }}>
-        Mag-login gamit ang iyong mobile number.
+        Mag-login gamit ang iyong email. Padadalhan ka namin ng secure login link.
       </p>
-      <form onSubmit={handleRequestOtp}>
-        <label htmlFor="phone" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-          Mobile Number
+      <form onSubmit={handleRequestMagicLink}>
+        <label htmlFor="email" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+          Email
         </label>
         <input
-          id="phone"
-          type="tel"
-          placeholder="+639XXXXXXXXX"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
           style={{
             width: "100%", padding: "12px 16px", fontSize: 16, borderRadius: 8,
@@ -46,8 +63,14 @@ export default function LoginPage() {
             cursor: "pointer",
           }}
         >
-          {loading ? "Nagpapadala..." : "Humiling ng OTP"}
+          {loading ? "Nagpapadala..." : "Send Magic Link"}
         </button>
+        {message ? (
+          <p style={{ color: "var(--color-success)", marginTop: 16 }}>{message}</p>
+        ) : null}
+        {error ? (
+          <p style={{ color: "var(--color-critical)", marginTop: 16 }}>{error}</p>
+        ) : null}
       </form>
     </main>
   );
