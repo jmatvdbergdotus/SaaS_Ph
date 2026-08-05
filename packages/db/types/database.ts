@@ -482,6 +482,56 @@ export type Database = {
           },
         ]
       }
+      store_integrations: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          error_message: string | null
+          external_account_id: string | null
+          external_account_name: string | null
+          id: string
+          last_sync_at: string | null
+          provider: string
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          external_account_id?: string | null
+          external_account_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider: string
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          external_account_id?: string | null
+          external_account_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider?: string
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_integrations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address: string | null
