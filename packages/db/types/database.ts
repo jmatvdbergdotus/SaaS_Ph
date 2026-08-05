@@ -642,23 +642,26 @@ export type Database = {
       users: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           last_login_at: string | null
-          phone_number: string
+          phone_number: string | null
           store_id: string | null
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           last_login_at?: string | null
-          phone_number: string
+          phone_number?: string | null
           store_id?: string | null
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           last_login_at?: string | null
-          phone_number?: string
+          phone_number?: string | null
           store_id?: string | null
         }
         Relationships: [
