@@ -5,7 +5,7 @@ export function normalizeTikTokMessage(payload: Record<string, unknown>): Partia
   return {
     channel: "TIKTOK",
     direction: "INBOUND",
-    body: String((payload as any)?.message ?? ""),
+    body: String(payload.message ?? ""),
     createdAt: new Date().toISOString(),
   };
 }

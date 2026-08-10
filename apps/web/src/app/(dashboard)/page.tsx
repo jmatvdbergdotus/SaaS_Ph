@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { formatPeso } from "@sari-saas/core";
+import { useLanguage } from "../../lib/language";
 import { loadDashboardStats, type DashboardStats } from "../../lib/dashboardData";
 import { useSyncStore } from "../../store/syncStore";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { status, setStatus } = useSyncStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,13 +45,14 @@ export default function DashboardPage() {
 
   const syncColor = status === "synced" ? "var(--color-success)"
     : status === "offline" ? "var(--color-critical)" : "var(--color-warning)";
-  const syncLabel = status === "synced" ? "Synced" : status === "offline" ? "Offline" : "Syncing…";
+  const syncLabel = status === "synced" ? t("dashboard.synced")
+    : status === "offline" ? t("dashboard.offline") : t("dashboard.syncing");
 
   if (!stats && !error) {
     return (
       <main style={{ padding: 16 }}>
         <DashboardHeader syncColor={syncColor} syncLabel={syncLabel} />
-        <p style={{ color: "var(--color-text-secondary)" }}>Loading your store dashboard...</p>
+        <p style={{ color: "var(--color-text-secondary)" }}>{t("dashboard.loading")}</p>
       </main>
     );
   }
@@ -78,7 +81,7 @@ export default function DashboardPage() {
         borderRadius: 8, padding: 16, marginBottom: 16,
       }}>
         <p style={{ color: "var(--color-text-secondary)", fontSize: 12, marginBottom: 4 }}>
-          KITA NGAYON
+          {t("dashboard.todayRevenue")}
         </p>
         <p style={{ fontSize: 28, fontWeight: 700 }}>{formatPeso(stats?.todayRevenue ?? 0)}</p>
       </div>
@@ -86,27 +89,27 @@ export default function DashboardPage() {
       {/* Status Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
         <StatusCard
-          label="Pending Payment"
+          label={t("dashboard.pendingPayment")}
           value={stats?.pendingPaymentCount ?? 0}
           color={(stats?.pendingPaymentCount ?? 0) > 0 ? "var(--color-warning)" : "var(--color-success)"}
-          cta="Fix Now"
+          cta={t("dashboard.fixNow")}
           href="/orders"
         />
         <StatusCard
-          label="Low Stock Items"
+          label={t("dashboard.lowStock")}
           value={stats?.lowStockCount ?? 0}
           color={(stats?.lowStockCount ?? 0) > 0 ? "var(--color-warning)" : "var(--color-success)"}
-          cta="View"
+          cta={t("dashboard.view")}
           href="/inventory"
         />
       </div>
 
       {/* Quick Actions */}
       <div style={{ display: "flex", gap: 12 }}>
-        <QuickAction label="Bagong Benta" emoji="🛒" />
-        <QuickAction label="Scan Screenshot" emoji="📷" />
-        <QuickAction label="Book Rider" emoji="🛵" />
-        <QuickAction label="Channels" emoji="🔗" href="/channels" />
+        <QuickAction label={t("dashboard.newSale")} emoji="🛒" />
+        <QuickAction label={t("dashboard.scanScreenshot")} emoji="📷" />
+        <QuickAction label={t("dashboard.bookRider")} emoji="🛵" />
+        <QuickAction label={t("dashboard.channels")} emoji="🔗" href="/channels" />
       </div>
     </main>
   );

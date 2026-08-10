@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "../../lib/language";
 import { supabase } from "../../lib/supabase";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,51 +56,20 @@ export default function OnboardingPage() {
     const { data: userResult, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userResult.user) {
-      setError("Please log in again before creating your store.");
+      setError(t("onboarding.loginAgain"));
       setSaving(false);
       return;
     }
 
-    const authUser = userResult.user;
-    const email = authUser.email ?? null;
-
-    const { error: profileError } = await supabase.from("users").upsert({
-      id: authUser.id,
-      email,
-      last_login_at: new Date().toISOString(),
+    const { error: createStoreError } = await supabase.rpc("create_store_profile", {
+      p_store_name: storeName.trim(),
+      p_owner_name: ownerName.trim(),
+      p_contact_number: contactNumber.trim(),
+      p_address: address.trim() || undefined,
     });
 
-    if (profileError) {
-      setError(profileError.message);
-      setSaving(false);
-      return;
-    }
-
-    const { data: store, error: storeError } = await supabase
-      .from("stores")
-      .insert({
-        owner_id: authUser.id,
-        name: storeName,
-        owner_name: ownerName,
-        contact_number: contactNumber,
-        address: address || null,
-      })
-      .select("id")
-      .single();
-
-    if (storeError) {
-      setError(storeError.message);
-      setSaving(false);
-      return;
-    }
-
-    const { error: updateProfileError } = await supabase
-      .from("users")
-      .update({ store_id: store.id })
-      .eq("id", authUser.id);
-
-    if (updateProfileError) {
-      setError(updateProfileError.message);
+    if (createStoreError) {
+      setError(createStoreError.message);
       setSaving(false);
       return;
     }
@@ -109,49 +80,54 @@ export default function OnboardingPage() {
   if (loading) {
     return (
       <main style={{ padding: 24, maxWidth: 480, margin: "0 auto" }}>
-        <p style={{ color: "var(--color-text-secondary)" }}>Checking your account...</p>
+        <p style={{ color: "var(--color-text-secondary)" }}>{t("onboarding.checking")}</p>
       </main>
     );
   }
 
   return (
     <main style={{ padding: 24, maxWidth: 480, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Set up your store</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{t("onboarding.title")}</h1>
       <p style={{ color: "var(--color-text-secondary)", marginBottom: 24 }}>
-        Tell us a little about your sari-sari store so we can secure your dashboard data.
+        {t("onboarding.intro")}
       </p>
 
       <form onSubmit={handleSubmit}>
         <Field
           id="store-name"
-          label="Store Name"
+          label={t("onboarding.storeName")}
           placeholder="Jane's Sari-Sari Store"
           value={storeName}
           onChange={setStoreName}
+          maxLength={120}
           required
         />
         <Field
           id="owner-name"
-          label="Owner Name"
+          label={t("onboarding.ownerName")}
           placeholder="Jane"
           value={ownerName}
           onChange={setOwnerName}
+          maxLength={120}
           required
         />
         <Field
           id="contact-number"
-          label="Contact Number"
+          label={t("onboarding.contactNumber")}
           placeholder="+639XXXXXXXXX"
           value={contactNumber}
           onChange={setContactNumber}
+          maxLength={16}
+          type="tel"
           required
         />
         <Field
           id="address"
-          label="Address"
-          placeholder="Optional"
+          label={t("onboarding.address")}
+          placeholder={t("onboarding.optional")}
           value={address}
           onChange={setAddress}
+          maxLength={500}
         />
 
         <button
@@ -170,7 +146,7 @@ export default function OnboardingPage() {
             cursor: "pointer",
           }}
         >
-          {saving ? "Saving..." : "Create Store"}
+          {saving ? t("common.saving") : t("onboarding.createStore")}
         </button>
 
         {error ? (
@@ -187,6 +163,8 @@ function Field({
   placeholder,
   value,
   onChange,
+  maxLength,
+  type = "text",
   required = false,
 }: {
   id: string;
@@ -194,6 +172,8 @@ function Field({
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
+  maxLength: number;
+  type?: "text" | "tel";
   required?: boolean;
 }) {
   return (
@@ -201,10 +181,12 @@ function Field({
       {label}
       <input
         id={id}
-        type="text"
+        type={type}
+        inputMode={type === "tel" ? "tel" : "text"}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        maxLength={maxLength}
         required={required}
         style={{
           width: "100%",

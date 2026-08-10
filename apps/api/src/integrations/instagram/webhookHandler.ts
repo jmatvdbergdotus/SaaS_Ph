@@ -5,7 +5,7 @@ export function normalizeInstagramMessage(payload: Record<string, unknown>): Par
   return {
     channel: "INSTAGRAM",
     direction: "INBOUND",
-    body: String((payload as any)?.message ?? ""),
+    body: String(payload.message ?? ""),
     createdAt: new Date().toISOString(),
   };
 }

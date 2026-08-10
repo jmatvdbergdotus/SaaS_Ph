@@ -1,6 +1,6 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../../../constants/theme";
-import { CHANNEL_COLORS, getElapsedLabel, type MessageThread } from "@sari-saas/core";
+import { CHANNEL_COLORS, type MessageThread } from "@sari-saas/core";
 
 const mockThreads: MessageThread[] = [];
 
@@ -36,7 +36,7 @@ function ThreadRow({ thread }: { thread: MessageThread }) {
   );
 }
 
-const { colors, borderRadius, fontSize } = theme;
+const { colors, fontSize } = theme;
 const styles = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: colors.slate, padding: 16 },
   title:        { fontSize: fontSize.xl, fontWeight: "700", marginBottom: 16, color: colors.navy },

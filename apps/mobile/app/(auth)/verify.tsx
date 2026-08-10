@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { Alert, View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { theme } from "../../constants/theme";
 
 export default function VerifyScreen() {
@@ -10,9 +10,11 @@ export default function VerifyScreen() {
 
   async function handleVerify() {
     setLoading(true);
-    // TODO: call API POST /auth/otp/verify → store JWT → router.replace("/(app)")
+    Alert.alert(
+      "Verification unavailable",
+      "No code was accepted and no session was created. Phone OTP is still being configured."
+    );
     setLoading(false);
-    router.replace("/(app)");
   }
 
   return (

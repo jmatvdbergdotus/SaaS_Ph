@@ -40,7 +40,7 @@ export default function InventoryScreen() {
   );
 }
 
-const { colors, borderRadius, fontSize } = theme;
+const { colors, fontSize } = theme;
 const styles = StyleSheet.create({
   screen:     { flex: 1, backgroundColor: colors.slate, padding: 16 },
   title:      { fontSize: fontSize.xl, fontWeight: "700", marginBottom: 16, color: colors.navy },

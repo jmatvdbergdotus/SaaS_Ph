@@ -11,7 +11,7 @@ interface OrdersState {
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
 }
 
-export const useOrdersStore = create<OrdersState>((set, get) => ({
+export const useOrdersStore = create<OrdersState>((set) => ({
   orders: [],
   isLoading: false,
 

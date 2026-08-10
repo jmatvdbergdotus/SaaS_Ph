@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { router } from "expo-router";
 import { theme } from "../../constants/theme";
 
 export default function LoginScreen() {
@@ -13,9 +12,11 @@ export default function LoginScreen() {
       return;
     }
     setLoading(true);
-    // TODO: call API POST /auth/otp/request
+    Alert.alert(
+      "Phone sign-in is not ready",
+      "Use the web email login for now. Phone OTP will be enabled after an SMS provider is securely configured."
+    );
     setLoading(false);
-    router.push({ pathname: "/auth/verify", params: { phone } });
   }
 
   return (

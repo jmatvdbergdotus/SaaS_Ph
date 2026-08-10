@@ -3,6 +3,10 @@ import { config } from "../../config";
 const MAYA_BASE = "https://pg.maya.ph/payments/v1";
 
 async function mayaFetch(path: string, options: RequestInit = {}) {
+  if (!config.MAYA_SECRET_KEY) {
+    throw new Error("Maya integration is not configured");
+  }
+
   const credentials = Buffer.from(`${config.MAYA_SECRET_KEY}:`).toString("base64");
   const res = await fetch(`${MAYA_BASE}${path}`, {
     ...options,
@@ -12,7 +16,7 @@ async function mayaFetch(path: string, options: RequestInit = {}) {
       ...(options.headers ?? {}),
     },
   });
-  if (!res.ok) throw new Error(`Maya error ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Maya request failed with status ${res.status}`);
   return res.json();
 }
 

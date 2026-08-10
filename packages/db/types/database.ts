@@ -729,7 +729,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_store_profile: {
+        Args: {
+          p_address?: string
+          p_contact_number: string
+          p_owner_name: string
+          p_store_name: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

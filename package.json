@@ -22,5 +22,17 @@
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "ajv>fast-uri": "3.1.5",
+      "brace-expansion@1": "1.1.17",
+      "brace-expansion@2": "2.1.4",
+      "js-yaml@3": "3.15.1",
+      "js-yaml@4": "4.3.0",
+      "next@15.5.21>postcss": "8.5.23",
+      "next@15.5.21>sharp": "0.35.0",
+      "postcss>nanoid": "3.3.17"
+    }
   }
 }

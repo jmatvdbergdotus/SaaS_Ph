@@ -1,130 +1,238 @@
 "use client";
 
-const CHANNELS = [
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLanguage } from "../../../lib/language";
+import {
+  loadChannelData,
+  setRaketManualTracking,
+  type ChannelIntegration,
+  type ChannelProvider,
+} from "../../../lib/channelsData";
+import type { TranslationKey } from "../../../lib/i18n";
+
+interface ChannelDefinition {
+  name: string;
+  providerLabelKey: TranslationKey;
+  provider: ChannelProvider;
+  descriptionKey: TranslationKey;
+  requirementsKey: TranslationKey;
+  actionLabelKey: TranslationKey;
+}
+
+const CHANNELS: ChannelDefinition[] = [
   {
     name: "Facebook",
-    provider: "Meta",
-    status: "Connection needed",
-    statusColor: "var(--color-warning)",
-    description: "Connect a Facebook Page to import messages, comments, and commerce activity.",
-    requirements: "Requires a Meta Developer App, Page permissions, and webhook setup.",
-    actionLabel: "Connect Facebook",
-    actionDisabled: true,
+    providerLabelKey: "channels.meta",
+    provider: "FACEBOOK",
+    descriptionKey: "channels.facebookDescription",
+    requirementsKey: "channels.facebookRequirements",
+    actionLabelKey: "channels.facebookAction",
   },
   {
     name: "Instagram",
-    provider: "Meta",
-    status: "Connection needed",
-    statusColor: "var(--color-warning)",
-    description: "Connect an Instagram business account linked to a Facebook Page.",
-    requirements: "Requires Instagram Graph API access through Meta.",
-    actionLabel: "Connect Instagram",
-    actionDisabled: true,
+    providerLabelKey: "channels.meta",
+    provider: "INSTAGRAM",
+    descriptionKey: "channels.instagramDescription",
+    requirementsKey: "channels.instagramRequirements",
+    actionLabelKey: "channels.instagramAction",
   },
   {
     name: "TikTok Shop",
-    provider: "TikTok",
-    status: "Connection needed",
-    statusColor: "var(--color-warning)",
-    description: "Connect TikTok Shop to sync shop orders and customer activity.",
-    requirements: "Requires TikTok Shop API/OAuth access for the seller account.",
-    actionLabel: "Connect TikTok",
-    actionDisabled: true,
+    providerLabelKey: "channels.tiktok",
+    provider: "TIKTOK_SHOP",
+    descriptionKey: "channels.tiktokDescription",
+    requirementsKey: "channels.tiktokRequirements",
+    actionLabelKey: "channels.tiktokAction",
   },
   {
     name: "Raket.ph",
-    provider: "Manual",
-    status: "Manual tracking available soon",
-    statusColor: "var(--color-neutral)",
-    description: "Track Raket.ph as an order source while an official API integration is confirmed.",
-    requirements: "Can start as manual order tagging; API/webhook support still needs verification.",
-    actionLabel: "Set Up Manual Tracking",
-    actionDisabled: true,
+    providerLabelKey: "channels.manual",
+    provider: "RAKET_PH",
+    descriptionKey: "channels.raketDescription",
+    requirementsKey: "channels.raketRequirements",
+    actionLabelKey: "channels.raketAction",
   },
 ];
 
 export default function ChannelsPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [integrations, setIntegrations] = useState<ChannelIntegration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingProvider, setSavingProvider] = useState<ChannelProvider | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const result = await loadChannelData();
+
+        if (result.authState === "unauthenticated") {
+          router.replace("/login");
+          return;
+        }
+
+        if (result.authState === "needs_onboarding") {
+          router.replace("/onboarding");
+          return;
+        }
+
+        setStoreId(result.storeId);
+        setIntegrations(result.integrations);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : t("channels.loadError"));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [router, t]);
+
+  async function toggleRaket(integration: ChannelIntegration | undefined) {
+    if (!storeId) return;
+
+    setSavingProvider("RAKET_PH");
+    setError(null);
+
+    try {
+      const updated = await setRaketManualTracking(
+        storeId,
+        integration,
+        integration?.status !== "MANUAL"
+      );
+      setIntegrations((current) => [
+        ...current.filter((item) => item.provider !== "RAKET_PH"),
+        updated,
+      ]);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t("channels.raketError"));
+    } finally {
+      setSavingProvider(null);
+    }
+  }
+
   return (
     <main style={{ padding: 16 }}>
       <header style={{ marginBottom: 20 }}>
-        <a href="/" style={{ color: "var(--color-navy)", fontWeight: 600, textDecoration: "none" }}>
-          Back to dashboard
-        </a>
+        <Link href="/" style={{ color: "var(--color-navy)", fontWeight: 600, textDecoration: "none" }}>
+          {t("common.backToDashboard")}
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 16, marginBottom: 8 }}>
-          Sales Channels
+          {t("channels.title")}
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-          Connect the places where you sell so Sari-SaaS can pull orders, messages, and activity into
-          one dashboard. These connection buttons are prepared as the UI entry point; the OAuth/API
-          backend is the next build step.
+          {t("channels.intro")}
         </p>
       </header>
 
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-        {CHANNELS.map((channel) => (
-          <ChannelCard key={channel.name} channel={channel} />
-        ))}
-      </section>
+      {error ? (
+        <p style={{ color: "var(--color-critical)", marginBottom: 16 }}>{error}</p>
+      ) : null}
+
+      {loading ? (
+        <p style={{ color: "var(--color-text-secondary)" }}>{t("channels.loading")}</p>
+      ) : (
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          {CHANNELS.map((channel) => {
+            const integration = integrations.find((item) => item.provider === channel.provider);
+            return (
+              <ChannelCard
+                key={channel.provider}
+                channel={channel}
+                integration={integration}
+                saving={savingProvider === channel.provider}
+                onRaketToggle={() => toggleRaket(integration)}
+              />
+            );
+          })}
+        </section>
+      )}
     </main>
   );
 }
 
-function ChannelCard({ channel }: { channel: (typeof CHANNELS)[number] }) {
+function ChannelCard({ channel, integration, saving, onRaketToggle }: {
+  channel: ChannelDefinition;
+  integration: ChannelIntegration | undefined;
+  saving: boolean;
+  onRaketToggle: () => void;
+}) {
+  const { t } = useLanguage();
+  const isRaket = channel.provider === "RAKET_PH";
+  const isManual = integration?.status === "MANUAL";
+  const status = getStatus(integration, isRaket, t);
+
   return (
     <article style={{
-      background: "var(--color-surface)",
-      border: "1px solid var(--color-border)",
-      borderRadius: 12,
-      padding: 16,
-      display: "flex",
-      flexDirection: "column",
-      gap: 12,
+      background: "var(--color-surface)", border: "1px solid var(--color-border)",
+      borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12,
     }}>
       <div>
         <p style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>
-          {channel.provider}
+          {t(channel.providerLabelKey)}
         </p>
         <h2 style={{ fontSize: 18, fontWeight: 700 }}>{channel.name}</h2>
       </div>
 
-      <p style={{ color: channel.statusColor, fontSize: 13, fontWeight: 700 }}>
-        {channel.status}
-      </p>
-
+      <p style={{ color: status.color, fontSize: 13, fontWeight: 700 }}>{status.label}</p>
+      {integration?.externalAccountName ? <p>{integration.externalAccountName}</p> : null}
       <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-        {channel.description}
+        {t(channel.descriptionKey)}
       </p>
 
       <div style={{
-        background: "var(--color-slate)",
-        border: "1px solid var(--color-border)",
-        borderRadius: 8,
-        padding: 12,
-        color: "var(--color-text-secondary)",
-        fontSize: 13,
-        lineHeight: 1.45,
+        background: "var(--color-slate)", border: "1px solid var(--color-border)",
+        borderRadius: 8, padding: 12, color: "var(--color-text-secondary)",
+        fontSize: 13, lineHeight: 1.45,
       }}>
-        {channel.requirements}
+        {t(channel.requirementsKey)}
       </div>
 
       <button
         type="button"
-        disabled={channel.actionDisabled}
-        title="This connection needs backend OAuth/API work next."
+        disabled={!isRaket || saving}
+        onClick={isRaket ? onRaketToggle : undefined}
+        title={isRaket ? undefined : t("channels.oauthUnavailable")}
         style={{
-          marginTop: "auto",
-          minHeight: "var(--touch-button)",
-          border: "none",
-          borderRadius: 8,
-          background: channel.actionDisabled ? "var(--color-border)" : "var(--color-navy)",
-          color: channel.actionDisabled ? "var(--color-text-secondary)" : "var(--color-text-inverse)",
-          fontWeight: 700,
-          fontFamily: "var(--font-system)",
-          cursor: channel.actionDisabled ? "not-allowed" : "pointer",
+          marginTop: "auto", minHeight: "var(--touch-button)", border: "none", borderRadius: 8,
+          background: !isRaket ? "var(--color-border)" : "var(--color-navy)",
+          color: !isRaket ? "var(--color-text-secondary)" : "var(--color-text-inverse)",
+          fontWeight: 700, fontFamily: "var(--font-system)",
+          cursor: !isRaket || saving ? "not-allowed" : "pointer",
         }}
       >
-        {channel.actionLabel}
+        {saving
+          ? t("common.saving")
+          : isRaket && isManual
+            ? t("channels.raketDisable")
+            : t(channel.actionLabelKey)}
       </button>
     </article>
   );
+}
+
+function getStatus(
+  integration: ChannelIntegration | undefined,
+  isRaket: boolean,
+  t: (key: TranslationKey) => string
+) {
+  switch (integration?.status) {
+    case "CONNECTED":
+      return { label: t("channels.status.connected"), color: "var(--color-success)" };
+    case "MANUAL":
+      return { label: t("channels.status.manual"), color: "var(--color-success)" };
+    case "PENDING":
+      return { label: t("channels.status.pending"), color: "var(--color-warning)" };
+    case "ERROR":
+      return { label: t("channels.status.error"), color: "var(--color-critical)" };
+    default:
+      return {
+        label: isRaket ? t("channels.status.manualOff") : t("channels.status.connectionNeeded"),
+        color: "var(--color-warning)",
+      };
+  }
 }

@@ -10,14 +10,16 @@ export async function paymentsRoutes(app: FastifyInstance) {
   });
 
   // POST /payments/webhooks/xendit
-  app.post("/webhooks/xendit", async (req, reply) => {
-    // TODO: verify HMAC signature then paymentService.processXenditWebhook(req.body)
-    reply.send({ received: true });
+  app.post("/webhooks/xendit", async (_req, reply) => {
+    reply.status(503).send({
+      error: "Xendit webhooks are disabled until signature verification is configured.",
+    });
   });
 
   // POST /payments/webhooks/maya
-  app.post("/webhooks/maya", async (req, reply) => {
-    // TODO: verify signature then paymentService.processMayaWebhook(req.body)
-    reply.send({ received: true });
+  app.post("/webhooks/maya", async (_req, reply) => {
+    reply.status(503).send({
+      error: "Maya webhooks are disabled until signature verification is configured.",
+    });
   });
 }

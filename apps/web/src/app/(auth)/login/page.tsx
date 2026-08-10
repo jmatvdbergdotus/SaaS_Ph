@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
+import { useLanguage } from "../../../lib/language";
 import { supabase } from "../../../lib/supabase";
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -15,7 +17,7 @@ export default function LoginPage() {
     setError(null);
 
     const { error: signInError } = await supabase.auth.signInWithOtp({
-      email,
+      email: email.trim().toLowerCase(),
       options: {
         emailRedirectTo: `${window.location.origin}/onboarding`,
       },
@@ -24,7 +26,7 @@ export default function LoginPage() {
     if (signInError) {
       setError(signInError.message);
     } else {
-      setMessage("Check your email for the login link.");
+      setMessage(t("login.checkEmail"));
     }
 
     setLoading(false);
@@ -34,11 +36,11 @@ export default function LoginPage() {
     <main style={{ padding: 24, maxWidth: 400, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Sari-SaaS Hub</h1>
       <p style={{ color: "var(--color-text-secondary)", marginBottom: 24 }}>
-        Mag-login gamit ang iyong email. Padadalhan ka namin ng secure login link.
+        {t("login.intro")}
       </p>
       <form onSubmit={handleRequestMagicLink}>
         <label htmlFor="email" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-          Email
+          {t("login.email")}
         </label>
         <input
           id="email"
@@ -46,6 +48,9 @@ export default function LoginPage() {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          inputMode="email"
+          maxLength={254}
           required
           style={{
             width: "100%", padding: "12px 16px", fontSize: 16, borderRadius: 8,
@@ -63,7 +68,7 @@ export default function LoginPage() {
             cursor: "pointer",
           }}
         >
-          {loading ? "Nagpapadala..." : "Send Magic Link"}
+          {loading ? t("login.sending") : t("login.sendLink")}
         </button>
         {message ? (
           <p style={{ color: "var(--color-success)", marginTop: 16 }}>{message}</p>

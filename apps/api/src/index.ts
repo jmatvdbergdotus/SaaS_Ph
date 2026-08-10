@@ -1,26 +1,36 @@
 import Fastify from "fastify";
 import { config } from "./config";
 
-const app = Fastify({ logger: true });
+const app = Fastify({
+  bodyLimit: 1024 * 1024,
+  logger: {
+    redact: {
+      paths: ["req.headers.authorization", "req.headers.cookie"],
+      censor: "[REDACTED]",
+    },
+  },
+});
 
 // ── Plugins ─────────────────────────────────────────────────────────────────
 async function registerPlugins() {
   const cors = await import("@fastify/cors");
-  const jwt  = await import("@fastify/jwt");
   const rateLimit = await import("@fastify/rate-limit");
 
   await app.register(cors.default, {
-    origin: [config.APP_URL, /\.pages\.dev$/],
-    credentials: true,
-  });
-
-  await app.register(jwt.default, {
-    secret: config.JWT_SECRET,
+    origin: config.APP_URL,
+    credentials: false,
   });
 
   await app.register(rateLimit.default, {
     max: 100,
     timeWindow: "1 minute",
+  });
+
+  app.addHook("onSend", async (_request, reply, payload) => {
+    reply.header("X-Content-Type-Options", "nosniff");
+    reply.header("X-Frame-Options", "DENY");
+    reply.header("Referrer-Policy", "no-referrer");
+    return payload;
   });
 }
 

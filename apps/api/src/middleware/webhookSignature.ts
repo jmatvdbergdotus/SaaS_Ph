@@ -1,12 +1,12 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 export function verifyXenditSignature(
-  rawBody: string,
+  _rawBody: string,
   token: string,
   webhookToken: string
 ): boolean {
   // Xendit passes x-callback-token header; compare directly (not HMAC)
-  return timingSafeEqual(Buffer.from(token), Buffer.from(webhookToken));
+  return safeEqual(token, webhookToken);
 }
 
 export function verifyMayaSignature(
@@ -15,9 +15,12 @@ export function verifyMayaSignature(
   secret: string
 ): boolean {
   const hmac = createHmac("sha512", secret).update(rawBody).digest("hex");
-  try {
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(hmac));
-  } catch {
-    return false;
-  }
+  return safeEqual(signature, hmac);
+}
+
+function safeEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
