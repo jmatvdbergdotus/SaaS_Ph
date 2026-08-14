@@ -7,7 +7,14 @@ export type OrderStatus =
   | "CANCELLED";
 
 export type PaymentMethod = "GCASH" | "MAYA" | "CASH" | "QR_PH" | "OTHER";
-export type SalesChannel = "FACEBOOK" | "TIKTOK" | "INSTAGRAM" | "DIRECT" | "WALK_IN";
+export type SalesChannel =
+  | "FACEBOOK"
+  | "TIKTOK"
+  | "INSTAGRAM"
+  | "WOOCOMMERCE"
+  | "SHOPIFY"
+  | "DIRECT"
+  | "WALK_IN";
 
 export interface OrderItem {
   id: string;

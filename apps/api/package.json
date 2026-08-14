@@ -6,6 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "test": "tsx --test src/integrations/channels/security.test.ts",
     "lint": "eslint src/",
     "type-check": "tsc --noEmit"
   },
@@ -15,6 +16,7 @@
     "@fastify/websocket": "^11.3.0",
     "@sari-saas/core": "workspace:*",
     "@supabase/supabase-js": "^2.43.0",
+    "dotenv": "^16.4.7",
     "fastify": "^5.11.3",
     "ioredis": "^5.3.0",
     "zod": "^3.23.0"

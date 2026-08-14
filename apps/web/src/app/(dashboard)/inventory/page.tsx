@@ -1,8 +1,8 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { db } from "../../../lib/indexeddb";
 import { computeStockStatus, type InventoryItem } from "@sari-saas/core";
+import { BackToDashboard } from "../../../components/BackToDashboard";
 import { useLanguage } from "../../../lib/language";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,20 +21,7 @@ export default function InventoryPage() {
 
   return (
     <main style={{ padding: 16 }}>
-      <Link
-        href="/"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          minHeight: "var(--touch-min)",
-          marginBottom: 12,
-          color: "var(--color-navy)",
-          fontWeight: 600,
-          textDecoration: "none",
-        }}
-      >
-        {t("common.backToDashboard")}
-      </Link>
+      <BackToDashboard />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>{t("inventory.title")}</h1>

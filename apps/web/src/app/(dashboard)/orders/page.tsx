@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useOrdersStore } from "../../../store/ordersStore";
 import { formatPeso } from "@sari-saas/core";
 import type { Order, OrderStatus } from "@sari-saas/core";
+import { BackToDashboard } from "../../../components/BackToDashboard";
 import { useLanguage } from "../../../lib/language";
 import type { TranslationKey } from "../../../lib/i18n";
 
@@ -32,6 +33,7 @@ export default function OrdersPage() {
 
   return (
     <main style={{ padding: 16 }}>
+      <BackToDashboard />
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>{t("orders.title")}</h1>
       {orders.length === 0 ? (
         <p style={{ color: "var(--color-text-secondary)", textAlign: "center", marginTop: 48 }}>

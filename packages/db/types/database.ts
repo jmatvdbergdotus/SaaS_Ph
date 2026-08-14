@@ -86,6 +86,107 @@ export type Database = {
           },
         ]
       }
+      channel_oauth_states: {
+        Row: {
+          consumed_at: string | null
+          context_encrypted: string | null
+          created_at: string
+          expires_at: string
+          provider: string
+          state_hash: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          context_encrypted?: string | null
+          created_at?: string
+          expires_at: string
+          provider: string
+          state_hash: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          context_encrypted?: string | null
+          created_at?: string
+          expires_at?: string
+          provider?: string
+          state_hash?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_oauth_states_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_webhook_events: {
+        Row: {
+          error_message: string | null
+          event_type: string | null
+          external_account_id: string | null
+          external_event_id: string
+          id: string
+          integration_id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          received_at: string
+          status: string
+          store_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          event_type?: string | null
+          external_account_id?: string | null
+          external_event_id: string
+          id?: string
+          integration_id: string
+          payload: Json
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+          status?: string
+          store_id: string
+        }
+        Update: {
+          error_message?: string | null
+          event_type?: string | null
+          external_account_id?: string | null
+          external_event_id?: string
+          id?: string
+          integration_id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_webhook_events_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "store_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_webhook_events_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           created_at: string
@@ -478,6 +579,41 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_integration_credentials: {
+        Row: {
+          access_token_expires_at: string | null
+          created_at: string
+          encrypted_credentials: string
+          integration_id: string
+          refresh_token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_expires_at?: string | null
+          created_at?: string
+          encrypted_credentials: string
+          integration_id: string
+          refresh_token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_expires_at?: string | null
+          created_at?: string
+          encrypted_credentials?: string
+          integration_id?: string
+          refresh_token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_integration_credentials_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: true
+            referencedRelation: "store_integrations"
             referencedColumns: ["id"]
           },
         ]

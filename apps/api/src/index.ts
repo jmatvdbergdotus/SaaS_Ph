@@ -5,7 +5,7 @@ const app = Fastify({
   bodyLimit: 1024 * 1024,
   logger: {
     redact: {
-      paths: ["req.headers.authorization", "req.headers.cookie"],
+      paths: ["req.url", "req.headers.authorization", "req.headers.cookie"],
       censor: "[REDACTED]",
     },
   },
@@ -43,6 +43,7 @@ async function registerRoutes() {
   const { inventoryRoutes } = await import("./routes/inventory/index.js");
   const { logisticsRoutes } = await import("./routes/logistics/index.js");
   const { syncRoutes }      = await import("./routes/sync/index.js");
+  const { channelsRoutes }  = await import("./routes/channels/index.js");
 
   app.register(authRoutes,      { prefix: "/auth" });
   app.register(ordersRoutes,    { prefix: "/orders" });
@@ -51,6 +52,7 @@ async function registerRoutes() {
   app.register(inventoryRoutes, { prefix: "/inventory" });
   app.register(logisticsRoutes, { prefix: "/logistics" });
   app.register(syncRoutes,      { prefix: "/sync" });
+  app.register(channelsRoutes,  { prefix: "/channels" });
 
   app.get("/health", async () => ({ status: "ok", ts: new Date().toISOString() }));
 }

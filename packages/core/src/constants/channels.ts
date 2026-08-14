@@ -5,6 +5,8 @@ export const CHANNEL_LABELS: Record<MessageChannel | SalesChannel, string> = {
   FACEBOOK:  "Facebook",
   TIKTOK:    "TikTok",
   INSTAGRAM: "Instagram",
+  WOOCOMMERCE: "WooCommerce",
+  SHOPIFY:   "Shopify",
   GCASH:     "GCash",
   MAYA:      "Maya",
   DIRECT:    "Direct",

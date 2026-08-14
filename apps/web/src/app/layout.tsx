@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { SessionTimeout } from "../components/SessionTimeout";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <SessionTimeout />
         <LanguageSwitcher />
         {children}
       </body>

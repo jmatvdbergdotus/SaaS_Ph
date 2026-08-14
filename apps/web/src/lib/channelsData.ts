@@ -1,7 +1,12 @@
 import { supabase } from "./supabase";
 
-export type ChannelProvider = "FACEBOOK" | "INSTAGRAM" | "TIKTOK_SHOP" | "RAKET_PH";
-export type ChannelStatus = "DISCONNECTED" | "PENDING" | "CONNECTED" | "MANUAL" | "ERROR";
+export type ChannelProvider =
+  | "FACEBOOK"
+  | "INSTAGRAM"
+  | "TIKTOK_SHOP"
+  | "WOOCOMMERCE"
+  | "SHOPIFY";
+export type ChannelStatus = "DISCONNECTED" | "PENDING" | "CONNECTED" | "ERROR";
 
 export interface ChannelIntegration {
   id: string;
@@ -18,6 +23,18 @@ export interface ChannelData {
   storeId: string | null;
   integrations: ChannelIntegration[];
 }
+
+export interface ChannelAccount {
+  id: string;
+  name: string;
+}
+
+export interface ProviderAvailability {
+  configured: boolean;
+  mode: "OAUTH" | "STORE_AUTH";
+}
+
+export type ProviderAvailabilityMap = Record<ChannelProvider, ProviderAvailability>;
 
 export async function loadChannelData(): Promise<ChannelData> {
   const { data: userResult, error: userError } = await supabase.auth.getUser();
@@ -61,44 +78,96 @@ export async function loadChannelData(): Promise<ChannelData> {
   };
 }
 
-export async function setRaketManualTracking(
-  storeId: string,
-  integration: ChannelIntegration | undefined,
-  enabled: boolean
-): Promise<ChannelIntegration> {
-  const status: ChannelStatus = enabled ? "MANUAL" : "DISCONNECTED";
-  const query = integration
-    ? supabase
-        .from("store_integrations")
-        .update({ status })
-        .eq("id", integration.id)
-        .eq("store_id", storeId)
-        .eq("provider", "RAKET_PH")
-    : supabase
-        .from("store_integrations")
-        .insert({ store_id: storeId, provider: "RAKET_PH", status });
+export async function loadProviderAvailability(): Promise<ProviderAvailabilityMap> {
+  const response = await authenticatedApiRequest<{
+    providers: ProviderAvailabilityMap;
+  }>("/channels/providers");
+  return response.providers;
+}
 
-  const { data, error } = await query
-    .select("id,provider,status,external_account_name,connected_at,last_sync_at,error_message")
-    .single();
+export async function beginChannelConnection(
+  provider: ChannelProvider,
+  storeUrl?: string
+): Promise<string> {
+  const usesStoreAuthorization = provider === "WOOCOMMERCE" || provider === "SHOPIFY";
+  const response = await authenticatedApiRequest<{ authorizationUrl: string }>(
+    `/channels/${providerSlug(provider)}/connect`,
+    {
+      method: "POST",
+      ...(usesStoreAuthorization ? {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeUrl }),
+      } : {}),
+    }
+  );
+  const authorizationUrl = new URL(response.authorizationUrl);
+  if (authorizationUrl.protocol !== "https:") {
+    throw new Error("The channel returned an invalid authorization address");
+  }
+  return authorizationUrl.toString();
+}
 
-  if (error) throw error;
+export async function loadAvailableChannelAccounts(
+  provider: ChannelProvider
+): Promise<ChannelAccount[]> {
+  if (!isSocialProvider(provider)) return [];
+  const response = await authenticatedApiRequest<{ accounts: ChannelAccount[] }>(
+    `/channels/${providerSlug(provider)}/accounts`
+  );
+  return response.accounts;
+}
 
-  return {
-    id: data.id,
-    provider: data.provider as ChannelProvider,
-    status: data.status as ChannelStatus,
-    externalAccountName: data.external_account_name,
-    connectedAt: data.connected_at,
-    lastSyncAt: data.last_sync_at,
-    errorMessage: data.error_message,
-  };
+export async function selectChannelAccount(provider: ChannelProvider, accountId: string) {
+  if (!isSocialProvider(provider)) throw new Error("This provider does not use account selection");
+  await authenticatedApiRequest(`/channels/${providerSlug(provider)}/select`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accountId }),
+  });
+}
+
+export async function disconnectChannel(provider: ChannelProvider) {
+  await authenticatedApiRequest(`/channels/${providerSlug(provider)}`, {
+    method: "DELETE",
+  });
 }
 
 function isProvider(value: string): value is ChannelProvider {
-  return ["FACEBOOK", "INSTAGRAM", "TIKTOK_SHOP", "RAKET_PH"].includes(value);
+  return ["FACEBOOK", "INSTAGRAM", "TIKTOK_SHOP", "WOOCOMMERCE", "SHOPIFY"].includes(value);
 }
 
 function isStatus(value: string): value is ChannelStatus {
-  return ["DISCONNECTED", "PENDING", "CONNECTED", "MANUAL", "ERROR"].includes(value);
+  return ["DISCONNECTED", "PENDING", "CONNECTED", "ERROR"].includes(value);
+}
+
+function isSocialProvider(provider: ChannelProvider): boolean {
+  return provider === "FACEBOOK" || provider === "INSTAGRAM" || provider === "TIKTOK_SHOP";
+}
+
+function providerSlug(provider: ChannelProvider): string {
+  return provider === "TIKTOK_SHOP" ? "tiktok" : provider.toLowerCase();
+}
+
+async function authenticatedApiRequest<T = Record<string, never>>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.access_token) throw new Error("Your session has expired");
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  const response = await fetch(new URL(path, apiUrl), {
+    ...init,
+    headers: {
+      ...init.headers,
+      Authorization: `Bearer ${data.session.access_token}`,
+    },
+    cache: "no-store",
+  });
+
+  const body = await response.json().catch(() => null) as { error?: string } | null;
+  if (!response.ok) {
+    throw new Error(body?.error ?? "The channel service could not complete this request");
+  }
+  return (body ?? {}) as T;
 }

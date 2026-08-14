@@ -45,6 +45,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.43.0
         version: 2.108.1
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       fastify:
         specifier: ^5.11.3
         version: 5.11.3

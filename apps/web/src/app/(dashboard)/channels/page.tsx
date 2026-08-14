@@ -1,14 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { BackToDashboard } from "../../../components/BackToDashboard";
 import { useLanguage } from "../../../lib/language";
 import {
+  beginChannelConnection,
+  disconnectChannel,
+  loadAvailableChannelAccounts,
   loadChannelData,
-  setRaketManualTracking,
+  loadProviderAvailability,
+  selectChannelAccount,
+  type ChannelAccount,
   type ChannelIntegration,
   type ChannelProvider,
+  type ProviderAvailabilityMap,
 } from "../../../lib/channelsData";
 import type { TranslationKey } from "../../../lib/i18n";
 
@@ -19,6 +25,9 @@ interface ChannelDefinition {
   descriptionKey: TranslationKey;
   requirementsKey: TranslationKey;
   actionLabelKey: TranslationKey;
+  setupNeededKey?: TranslationKey;
+  storeAddressLabelKey?: TranslationKey;
+  storeAddressPlaceholderKey?: TranslationKey;
 }
 
 const CHANNELS: ChannelDefinition[] = [
@@ -47,81 +56,164 @@ const CHANNELS: ChannelDefinition[] = [
     actionLabelKey: "channels.tiktokAction",
   },
   {
-    name: "Raket.ph",
-    providerLabelKey: "channels.manual",
-    provider: "RAKET_PH",
-    descriptionKey: "channels.raketDescription",
-    requirementsKey: "channels.raketRequirements",
-    actionLabelKey: "channels.raketAction",
+    name: "WooCommerce",
+    providerLabelKey: "channels.ecommerce",
+    provider: "WOOCOMMERCE",
+    descriptionKey: "channels.woocommerceDescription",
+    requirementsKey: "channels.woocommerceRequirements",
+    actionLabelKey: "channels.woocommerceAction",
+    setupNeededKey: "channels.woocommerceSetupNeeded",
+    storeAddressLabelKey: "channels.woocommerceAddress",
+    storeAddressPlaceholderKey: "channels.woocommercePlaceholder",
+  },
+  {
+    name: "Shopify",
+    providerLabelKey: "channels.ecommerce",
+    provider: "SHOPIFY",
+    descriptionKey: "channels.shopifyDescription",
+    requirementsKey: "channels.shopifyRequirements",
+    actionLabelKey: "channels.shopifyAction",
+    setupNeededKey: "channels.shopifySetupNeeded",
+    storeAddressLabelKey: "channels.shopifyAddress",
+    storeAddressPlaceholderKey: "channels.shopifyPlaceholder",
   },
 ];
+
+const DEFAULT_AVAILABILITY: ProviderAvailabilityMap = {
+  FACEBOOK: { configured: false, mode: "OAUTH" },
+  INSTAGRAM: { configured: false, mode: "OAUTH" },
+  TIKTOK_SHOP: { configured: false, mode: "OAUTH" },
+  WOOCOMMERCE: { configured: false, mode: "STORE_AUTH" },
+  SHOPIFY: { configured: false, mode: "STORE_AUTH" },
+};
 
 export default function ChannelsPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [storeId, setStoreId] = useState<string | null>(null);
   const [integrations, setIntegrations] = useState<ChannelIntegration[]>([]);
+  const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY);
+  const [accounts, setAccounts] = useState<Partial<Record<ChannelProvider, ChannelAccount[]>>>({});
+  const [selectedAccounts, setSelectedAccounts] = useState<Partial<Record<ChannelProvider, string>>>({});
+  const [storeAddresses, setStoreAddresses] = useState<Partial<Record<ChannelProvider, string>>>({});
   const [loading, setLoading] = useState(true);
   const [savingProvider, setSavingProvider] = useState<ChannelProvider | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     async function load() {
       try {
         const result = await loadChannelData();
+        if (!active) return;
 
         if (result.authState === "unauthenticated") {
           router.replace("/login");
           return;
         }
-
         if (result.authState === "needs_onboarding") {
           router.replace("/onboarding");
           return;
         }
 
-        setStoreId(result.storeId);
         setIntegrations(result.integrations);
+
+        try {
+          const providerAvailability = await loadProviderAvailability();
+          if (!active) return;
+          setAvailability(providerAvailability);
+
+          const pendingProviders = result.integrations
+            .filter((integration) => integration.status === "PENDING")
+            .map((integration) => integration.provider)
+            .filter((provider) => isSocialProvider(provider) && providerAvailability[provider].configured);
+
+          const accountResults = await Promise.all(pendingProviders.map(async (provider) => ({
+            provider,
+            accounts: await loadAvailableChannelAccounts(provider).catch(() => []),
+          })));
+          if (!active) return;
+
+          const nextAccounts: Partial<Record<ChannelProvider, ChannelAccount[]>> = {};
+          const nextSelections: Partial<Record<ChannelProvider, string>> = {};
+          accountResults.forEach(({ provider, accounts: providerAccounts }) => {
+            nextAccounts[provider] = providerAccounts;
+            if (providerAccounts[0]) nextSelections[provider] = providerAccounts[0].id;
+          });
+          setAccounts(nextAccounts);
+          setSelectedAccounts(nextSelections);
+        } catch {
+          setError(t("channels.serviceUnavailable"));
+        }
+
+        const callbackResult = new URLSearchParams(window.location.search).get("result");
+        if (callbackResult) setNotice(callbackMessage(callbackResult, t));
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : t("channels.loadError"));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
-    load();
+    void load();
+    return () => { active = false; };
   }, [router, t]);
 
-  async function toggleRaket(integration: ChannelIntegration | undefined) {
-    if (!storeId) return;
-
-    setSavingProvider("RAKET_PH");
+  async function handleChannelAction(
+    provider: ChannelProvider,
+    integration: ChannelIntegration | undefined
+  ) {
+    setSavingProvider(provider);
     setError(null);
+    setNotice(null);
 
     try {
-      const updated = await setRaketManualTracking(
-        storeId,
-        integration,
-        integration?.status !== "MANUAL"
-      );
-      setIntegrations((current) => [
-        ...current.filter((item) => item.provider !== "RAKET_PH"),
-        updated,
-      ]);
+      if (integration?.status === "CONNECTED") {
+        if (!window.confirm(t("channels.disconnectConfirm"))) return;
+        await disconnectChannel(provider);
+        replaceIntegration({ ...integration, status: "DISCONNECTED", externalAccountName: null });
+        setNotice(t("channels.disconnected"));
+        return;
+      }
+
+      const accountId = selectedAccounts[provider];
+      if (integration?.status === "PENDING" && accounts[provider]?.length && accountId) {
+        await selectChannelAccount(provider, accountId);
+        const selected = accounts[provider]?.find((account) => account.id === accountId);
+        replaceIntegration({
+          ...integration,
+          status: "CONNECTED",
+          externalAccountName: selected?.name ?? null,
+          connectedAt: new Date().toISOString(),
+          errorMessage: null,
+        });
+        setAccounts((current) => ({ ...current, [provider]: [] }));
+        setNotice(t("channels.connected"));
+        return;
+      }
+
+      const authorizationUrl = await beginChannelConnection(provider, storeAddresses[provider]);
+      window.location.assign(authorizationUrl);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t("channels.raketError"));
+      setError(saveError instanceof Error ? saveError.message : t("channels.connectionError"));
     } finally {
       setSavingProvider(null);
     }
   }
 
+  function replaceIntegration(updated: ChannelIntegration) {
+    setIntegrations((current) => [
+      ...current.filter((item) => item.provider !== updated.provider),
+      updated,
+    ]);
+  }
+
   return (
     <main style={{ padding: 16 }}>
       <header style={{ marginBottom: 20 }}>
-        <Link href="/" style={{ color: "var(--color-navy)", fontWeight: 600, textDecoration: "none" }}>
-          {t("common.backToDashboard")}
-        </Link>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 16, marginBottom: 8 }}>
+        <BackToDashboard />
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
           {t("channels.title")}
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
@@ -129,9 +221,8 @@ export default function ChannelsPage() {
         </p>
       </header>
 
-      {error ? (
-        <p style={{ color: "var(--color-critical)", marginBottom: 16 }}>{error}</p>
-      ) : null}
+      {notice ? <MessageBox color="var(--color-success)">{notice}</MessageBox> : null}
+      {error ? <MessageBox color="var(--color-critical)">{error}</MessageBox> : null}
 
       {loading ? (
         <p style={{ color: "var(--color-text-secondary)" }}>{t("channels.loading")}</p>
@@ -144,8 +235,20 @@ export default function ChannelsPage() {
                 key={channel.provider}
                 channel={channel}
                 integration={integration}
+                configured={availability[channel.provider].configured}
+                accounts={accounts[channel.provider] ?? []}
+                selectedAccountId={selectedAccounts[channel.provider] ?? ""}
+                storeAddress={storeAddresses[channel.provider] ?? ""}
                 saving={savingProvider === channel.provider}
-                onRaketToggle={() => toggleRaket(integration)}
+                onSelectedAccountChange={(accountId) => setSelectedAccounts((current) => ({
+                  ...current,
+                  [channel.provider]: accountId,
+                }))}
+                onStoreAddressChange={(value) => setStoreAddresses((current) => ({
+                  ...current,
+                  [channel.provider]: value,
+                }))}
+                onAction={() => handleChannelAction(channel.provider, integration)}
               />
             );
           })}
@@ -155,16 +258,45 @@ export default function ChannelsPage() {
   );
 }
 
-function ChannelCard({ channel, integration, saving, onRaketToggle }: {
+function ChannelCard({
+  channel,
+  integration,
+  configured,
+  accounts,
+  selectedAccountId,
+  storeAddress,
+  saving,
+  onSelectedAccountChange,
+  onStoreAddressChange,
+  onAction,
+}: {
   channel: ChannelDefinition;
   integration: ChannelIntegration | undefined;
+  configured: boolean;
+  accounts: ChannelAccount[];
+  selectedAccountId: string;
+  storeAddress: string;
   saving: boolean;
-  onRaketToggle: () => void;
+  onSelectedAccountChange: (accountId: string) => void;
+  onStoreAddressChange: (value: string) => void;
+  onAction: () => void;
 }) {
   const { t } = useLanguage();
-  const isRaket = channel.provider === "RAKET_PH";
-  const isManual = integration?.status === "MANUAL";
-  const status = getStatus(integration, isRaket, t);
+  const usesStoreAuthorization = channel.provider === "WOOCOMMERCE" || channel.provider === "SHOPIFY";
+  const hasAccountSelection = integration?.status === "PENDING" && accounts.length > 0;
+  const status = getStatus(integration, t);
+
+  let actionLabel = t(channel.actionLabelKey);
+  if (saving) actionLabel = t("common.saving");
+  else if (integration?.status === "CONNECTED") actionLabel = t("channels.disconnect");
+  else if (hasAccountSelection) actionLabel = t("channels.confirmAccount");
+  else if (integration?.status === "ERROR") actionLabel = t("channels.reconnect");
+
+  const needsStoreAddress = usesStoreAuthorization && integration?.status !== "CONNECTED";
+  const disabled = saving
+    || !configured
+    || (hasAccountSelection && !selectedAccountId)
+    || (needsStoreAddress && !storeAddress.trim());
 
   return (
     <article style={{
@@ -189,50 +321,105 @@ function ChannelCard({ channel, integration, saving, onRaketToggle }: {
         borderRadius: 8, padding: 12, color: "var(--color-text-secondary)",
         fontSize: 13, lineHeight: 1.45,
       }}>
-        {t(channel.requirementsKey)}
+        {!configured
+          ? t(channel.setupNeededKey ?? "channels.serverSetupNeeded")
+          : t(channel.requirementsKey)}
       </div>
+
+      {needsStoreAddress && channel.storeAddressLabelKey && channel.storeAddressPlaceholderKey ? (
+        <label style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 700 }}>
+          {t(channel.storeAddressLabelKey)}
+          <input
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={storeAddress}
+            placeholder={t(channel.storeAddressPlaceholderKey)}
+            onChange={(event) => onStoreAddressChange(event.target.value)}
+            style={{ minHeight: 44, border: "1px solid var(--color-border)", borderRadius: 8, padding: "0 10px" }}
+          />
+        </label>
+      ) : null}
+
+      {hasAccountSelection ? (
+        <label style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 700 }}>
+          {t("channels.chooseAccount")}
+          <select
+            value={selectedAccountId}
+            onChange={(event) => onSelectedAccountChange(event.target.value)}
+            style={{ minHeight: 44, border: "1px solid var(--color-border)", borderRadius: 8, padding: "0 10px" }}
+          >
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>{account.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      {integration?.status === "ERROR" && integration.errorMessage ? (
+        <p style={{ color: "var(--color-critical)", fontSize: 13 }}>{integration.errorMessage}</p>
+      ) : null}
 
       <button
         type="button"
-        disabled={!isRaket || saving}
-        onClick={isRaket ? onRaketToggle : undefined}
-        title={isRaket ? undefined : t("channels.oauthUnavailable")}
+        disabled={disabled}
+        onClick={onAction}
+        title={!configured ? t(channel.setupNeededKey ?? "channels.serverSetupNeeded") : undefined}
         style={{
           marginTop: "auto", minHeight: "var(--touch-button)", border: "none", borderRadius: 8,
-          background: !isRaket ? "var(--color-border)" : "var(--color-navy)",
-          color: !isRaket ? "var(--color-text-secondary)" : "var(--color-text-inverse)",
+          background: disabled ? "var(--color-border)" : "var(--color-navy)",
+          color: disabled ? "var(--color-text-secondary)" : "var(--color-text-inverse)",
           fontWeight: 700, fontFamily: "var(--font-system)",
-          cursor: !isRaket || saving ? "not-allowed" : "pointer",
+          cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
-        {saving
-          ? t("common.saving")
-          : isRaket && isManual
-            ? t("channels.raketDisable")
-            : t(channel.actionLabelKey)}
+        {actionLabel}
       </button>
     </article>
   );
 }
 
+function MessageBox({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      border: `1px solid ${color}`, borderRadius: 8, padding: 12,
+      color, background: "var(--color-surface)", marginBottom: 16,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function callbackMessage(result: string, t: (key: TranslationKey) => string): string {
+  switch (result) {
+    case "connected": return t("channels.connected");
+    case "pending": return t("channels.pendingCompletion");
+    case "select_account": return t("channels.selectAccountNotice");
+    case "cancelled": return t("channels.cancelled");
+    case "invalid_state":
+    case "invalid_callback": return t("channels.invalidCallback");
+    default: return t("channels.connectionError");
+  }
+}
+
 function getStatus(
   integration: ChannelIntegration | undefined,
-  isRaket: boolean,
   t: (key: TranslationKey) => string
 ) {
   switch (integration?.status) {
     case "CONNECTED":
       return { label: t("channels.status.connected"), color: "var(--color-success)" };
-    case "MANUAL":
-      return { label: t("channels.status.manual"), color: "var(--color-success)" };
     case "PENDING":
       return { label: t("channels.status.pending"), color: "var(--color-warning)" };
     case "ERROR":
       return { label: t("channels.status.error"), color: "var(--color-critical)" };
     default:
-      return {
-        label: isRaket ? t("channels.status.manualOff") : t("channels.status.connectionNeeded"),
-        color: "var(--color-warning)",
-      };
+      return { label: t("channels.status.connectionNeeded"), color: "var(--color-warning)" };
   }
+}
+
+function isSocialProvider(provider: ChannelProvider): boolean {
+  return provider === "FACEBOOK" || provider === "INSTAGRAM" || provider === "TIKTOK_SHOP";
 }
