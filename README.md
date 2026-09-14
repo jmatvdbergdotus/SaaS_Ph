@@ -64,7 +64,7 @@ pnpm dev:mobile       # Expo → scan QR with Expo Go
 | WooCommerce and Shopify connections | Secure connection foundation |
 | Signed, deduplicated channel webhook intake | Implemented; event processing pending |
 | Order management with state machine | Read/list foundation; full workflow pending |
-| Inventory tracking with low-stock alerts | Read/list foundation; full workflow pending |
+| Inventory tracking with low-stock alerts | Add/edit, restock, corrections, history implemented; migration 013 required |
 | Offline-first with IndexedDB sync | Data scaffold; end-to-end sync pending |
 | GCash/Maya OCR screenshot reconciliation | Scaffold only |
 | Xendit/Maya webhook integration | Scaffold only |

@@ -537,6 +537,7 @@ export type Database = {
       }
       stock_movements: {
         Row: {
+          note: string | null
           created_at: string
           id: string
           inventory_item_id: string
@@ -547,6 +548,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          note?: string | null
           created_at?: string
           id?: string
           inventory_item_id: string
@@ -557,6 +559,7 @@ export type Database = {
           type: string
         }
         Update: {
+          note?: string | null
           created_at?: string
           id?: string
           inventory_item_id?: string
@@ -872,6 +875,10 @@ export type Database = {
           p_owner_name: string
           p_store_name: string
         }
+        Returns: string
+      }
+      save_inventory_item: {
+        Args: { p_store_id: string; p_item_id: string | null; p_name: string; p_sku: string; p_price: number; p_threshold: number; p_stock: number; p_kind: string; p_note: string; p_expected_updated_at: string | null }
         Returns: string
       }
     }

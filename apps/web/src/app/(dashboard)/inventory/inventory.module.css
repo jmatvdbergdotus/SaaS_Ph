@@ -1,0 +1,15 @@
+.page { max-width: 960px; margin: auto; padding: 16px; }
+.header, .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.header { justify-content: space-between; }
+.page h1 { font-size: 24px; }
+.page h2 { font-size: 18px; margin-bottom: 8px; }
+.page p { margin: 12px 0; }
+.page button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-navy); color: white; cursor: pointer; }
+.page button:disabled { opacity: .55; cursor: wait; }
+.page label { display: grid; gap: 6px; margin-bottom: 12px; }
+.page input { min-height: 44px; width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px; background: white; color: #18253c; }
+.page fieldset { border: 0; padding: 0; min-width: 0; }
+.panel { padding: 18px; margin: 16px 0; border: 1px solid var(--color-border); border-radius: 12px; }
+.list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.error { padding: 12px; background: #fff0ef; color: #9a1919; border-radius: 8px; }
+.page button:focus-visible, .page input:focus-visible { outline: 3px solid #297fca; outline-offset: 3px; }
